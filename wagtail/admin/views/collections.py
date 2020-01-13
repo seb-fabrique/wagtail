@@ -22,7 +22,7 @@ class Index(IndexView):
 
     def get_queryset(self):
         # Only return children of the root node, so that the root is not editable
-        return Collection.get_first_root_node().get_children().order_by('name')
+        return Collection.get_first_root_node().get_descendants().order_by('path')
 
 
 class Create(CreateView):
@@ -36,10 +36,9 @@ class Create(CreateView):
     header_icon = 'folder-open-1'
 
     def save_instance(self):
-        # Always create new collections as children of root
         instance = self.form.save(commit=False)
-        root_collection = Collection.get_first_root_node()
-        root_collection.add_child(instance=instance)
+        parent = Collection.objects.get(pk=self.form.data['parent'])
+        parent.add_child(instance=instance)
         return instance
 
 
@@ -57,9 +56,15 @@ class Edit(EditView):
     context_object_name = 'collection'
     header_icon = 'folder-open-1'
 
+    def save_instance(self):
+        instance = self.form.save(commit=False)
+        parent = Collection.objects.get(pk=self.form.data['parent'])
+        instance.move(parent, 'last-child')
+        return instance
+
     def get_queryset(self):
         # Only return children of the root node, so that the root is not editable
-        return Collection.get_first_root_node().get_children().order_by('name')
+        return Collection.get_first_root_node().get_descendants().order_by('path')
 
 
 class Delete(DeleteView):
@@ -74,7 +79,7 @@ class Delete(DeleteView):
 
     def get_queryset(self):
         # Only return children of the root node, so that the root is not editable
-        return Collection.get_first_root_node().get_children().order_by('name')
+        return Collection.get_first_root_node().get_descendants().order_by('path')
 
     def get_collection_contents(self):
         collection_contents = [

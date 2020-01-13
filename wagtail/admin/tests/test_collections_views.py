@@ -40,7 +40,23 @@ class TestCollectionsIndexView(TestCase, WagtailTestUtils):
         response = self.get()
         self.assertEqual(
             [collection.name for collection in response.context['object_list']],
-            ['Avacado', 'Bread', 'Milk'])
+            ['Milk', 'Bread', 'Avacado'])
+
+    def test_nested_ordering(self):
+        root_collection = Collection.get_first_root_node()
+
+        animals = root_collection.add_child(name="Animal")
+        animals.add_child(name="Cat")
+        animals.add_child(name="Dogs")
+
+        vegetables = root_collection.add_child(name="Vegetable")
+        vegetables.add_child(name="Spinach")
+        vegetables.add_child(name="Dogs")
+
+        response = self.get()
+        self.assertEqual(
+            [collection.name for collection in response.context['object_list']],
+            ['Animal', 'Cat', 'Dogs', 'Vegetable', 'Spinach', 'Dogs'])
 
 
 class TestAddCollection(TestCase, WagtailTestUtils):

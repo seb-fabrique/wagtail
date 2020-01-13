@@ -9,6 +9,7 @@ from django.utils.translation import ugettext as _
 from wagtail.core.models import Collection, CollectionViewRestriction, GroupCollectionPermission
 
 from .view_restrictions import BaseViewRestrictionForm
+from ..templatetags.wagtailadmin_tags import format_collection
 
 
 class CollectionViewRestrictionForm(BaseViewRestrictionForm):
@@ -19,9 +20,27 @@ class CollectionViewRestrictionForm(BaseViewRestrictionForm):
 
 
 class CollectionForm(forms.ModelForm):
+    parent = forms.ChoiceField()
+
     class Meta:
         model = Collection
         fields = ('name',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        choices = Collection.objects.all().order_by('path')
+
+        if self.instance and self.instance.id:
+            self.fields['parent'].initial = self.instance.get_parent().pk
+            # choices = choices.exclude(pk=self.instance.pk)
+
+        else:
+            self.fields['parent'].initial = Collection.get_first_root_node().pk
+
+        self.fields['parent'].choices = [
+            (c.pk, format_collection(c)) for c in choices
+        ]
 
 
 class BaseCollectionMemberForm(forms.ModelForm):
